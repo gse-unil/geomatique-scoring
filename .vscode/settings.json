@@ -1,0 +1,7 @@
+{
+  "editor.detectIndentation": false,
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+  "files.trimTrailingWhitespace": true,
+  "[python]": {"editor.tabSize": 4}
+}
