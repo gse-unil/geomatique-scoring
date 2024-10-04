@@ -53,7 +53,20 @@ def correct_aprx(aprx_path: str) -> None:
     proj = aprx.Project(aprx_path)
 
     # Check first if there is a map which is from the MXD file.
+    print(f'{BOLD}. Criteria 01:   map import{END}')
     _imported_maps = check_map_import(proj)
+
+    print(f'{BOLD}. Criteria 02:   layout{END}')
+    layouts = check_layouts(proj)
+
+    print(f'{BOLD}. Criteria 03:   map view extent{END}')
+    changes = [check_map_view_extent(l) for l in layouts]
+    if any(changes):
+        print(f'  {GREEN}✔ Map extent has been changed (in at least one layout)"{END}')
+    else:
+        print(f'  {RED}{BOLD}✘ Map extent did not change"{END}')
+
+    print('')
 
     # Close the file
     proj.close()
@@ -63,11 +76,10 @@ def check_map_import(proj: aprx.Project) -> list:
     """
     Verifies if the map has been imported.
     """
-    print(f'{BOLD}. Criteria 01:   map import{END}')
     maps = proj.maps
 
     if len(maps) == 0:
-        print(f'  {RED}{BOLD}✘ No map found at all (!!!){END}\n')
+        print(f'  {RED}{BOLD}✘ No map found at all (!!!){END}')
         return []
 
     # Find the candidate maps: they should start with "Layers"
@@ -82,12 +94,10 @@ def check_map_import(proj: aprx.Project) -> list:
     if len(layer_maps) > 1:
         print(f'  {MAGENTA}! {len(layer_maps)} imported map found: "{layer_maps_str}"{END}')
 
-    print('')
-
     return layer_maps
 
 
-def is_imported_map(mp: aprx.ProjectItem):
+def is_imported_map(mp: aprx.Map):
     """
     Returns True if the provided map seems to be imported.
     A map is imported if its name starts with "Layers" and it contains the 7 layers:
@@ -96,14 +106,72 @@ def is_imported_map(mp: aprx.ProjectItem):
     if not mp.name.startswith('Layers'):
         return False
 
-    lyrs = mp.layers()
     n_corresponding_layers = 0
-    for lyr in lyrs:
+    for lyr in mp.layers:
         if lyr.id in ('towns', 'towns2', 'roads', 'hillshadech', 'cantons', 'lakes', 'dem'):
             n_corresponding_layers += 1
 
     # If there are 4 or more corresponding layers, we assume is the imported map
     return n_corresponding_layers >= 4
+
+
+def check_layouts(proj: aprx.Project) -> list:
+    """
+    Verifies if there is a layout in the project.
+    """
+    layouts = proj.layouts
+
+    if len(layouts) == 0:
+        print(f'  {RED}{BOLD}✘ No layout found at all (!!!){END}')
+        return []
+
+    layout_names = '", "'.join([l.name for l in layouts])
+
+    if len(layouts) > 1:
+        print(f'  {MAGENTA}! {len(layouts)} layouts found: "{layout_names}"{END}')
+
+    if len(layouts) == 1:
+        print(f'  {GREEN}✔ One layout found: "{layout_names}"{END}')
+
+    return layouts
+
+
+def check_map_view_extent(layout: aprx.Layout):
+    """
+    Checks if the map view extent is the same or not for the provided layout.
+    """
+    map_frames = layout.map_frames
+
+    if len(map_frames) == 0:
+        print(f'  {RED}{BOLD}✘ No map frame found in layout "{layout.name}"{END}')
+        return
+
+    if len(map_frames) > 1:
+        print(f'  {MAGENTA}! Several map frames found in layout "{layout.name}"{END}')
+
+    # Take the first map frame by default
+    mf = map_frames[0]
+
+    # Get the map extent (the MapView)
+    view = mf.map_view
+
+    # Create a MapView with the original extent.
+    orig_view = aprx.MapView({
+        "type": "CIMMapView",
+        "viewingMode": "Map",
+        "camera": {
+          "type": "CIMViewCamera",
+          "pitch": -90,
+          "scale": 1610926.9243986572,
+          "x": 659627.07655732706,
+          "y": 180810.99999999642,
+          "z": "NaN",
+          "viewportHeight": -1,
+          "viewportWidth": -1
+        }
+    })
+
+    return not view.is_equal(orig_view, tolerance={ 'x': 1, 'y': 1, 'scale': 100 })
 
 
 def main(tp_dir: str):

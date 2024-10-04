@@ -6,5 +6,8 @@ aprx is a small Python modules to extract some basic information from ArcGIS Pro
 __version__ = '0.1.0'
 
 from .project import Project
-from .project_item import ProjectItem
+from .map import Map
+from .map_frame import MapFrame
+from .map_view import MapView
 from .layer import Layer
+from .layout import Layout

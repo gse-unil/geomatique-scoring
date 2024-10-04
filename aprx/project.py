@@ -8,7 +8,8 @@ import shutil
 import tempfile
 from zipfile import ZipFile
 
-from .project_item import ProjectItem
+from .map import Map
+from .layout import Layout
 
 
 class Project:
@@ -34,61 +35,56 @@ class Project:
         with ZipFile(self.path, 'r') as zip_ref:
             zip_ref.extractall(self.tmp_dir)
 
-        # Prepare a cache variable for avoiding reading multiple times the same files.
+        # Prepare a cache variable to avoid loading multiple times the same data.
         self.cache = {}
 
+        # Read the file with all project items (the elements in the catalog)
+        with open(os.path.join(self.tmp_dir, 'GISProject.json'), 'r', encoding='utf-8') as f:
+            self.json = json.loads(f.read())
 
-    @property
-    def items(self):
-        """
-        Returns a list with all project items. These are the elements which are typically shown
-        in the ArcGIS Pro catalog, i.e. all maps, layouts, toolboxes, etc.
-        """
-        # If the items are already in the cache, just return them.
-        if self.cache.get('items', None) is not None:
-            return self.cache['items']
-
-        # If the project JSON file has not yet been loaded into the cache, do it now.
-        if self.cache.get('proj', None) is None:
-            items_fp = os.path.join(self.tmp_dir, 'GISProject.json')
-            with open(items_fp, 'r', encoding='utf-8') as f:
-                self.cache['proj'] = json.loads(f.read())
-
-        # We can now transform the project items in the JSON representation into ProjectItem
-        # instances.
-        proj_items_json = self.cache['proj'].get('projectItems', [])
-        proj_items = []
-        for item in proj_items_json:
-            proj_items.append(
-                ProjectItem(
-                    project=self,
-                    item_id=item['iD'],
-                    item_type=item['itemType'],
-                    name=item['name'],
-                    properties=item
-                )
-            )
-
-        # Keep the items in the cache
-        self.cache['items'] = proj_items
-
-        return proj_items
+        self.project_items = self.json.get('projectItems', [])
 
 
     @property
-    def maps(self):
+    def maps(self) -> list:
         """
         Returns all project items which are of item type "Map".
         """
-        return [it for it in self.items if it.item_type == 'Map']
+        # If the maps have already been loaded once, return them.
+        if self.cache.get('maps', None) is not None:
+            return self.cache['maps']
+
+        # Load the maps
+        self.cache['maps'] = [
+            Map(self, it) for it in self.project_items if it['itemType'] == 'Map'
+        ]
+
+        return self.cache['maps']
+
+
+    def map_with_uri(self, uri) -> Map:
+        """
+        Returns a map based on its uRI.
+        """
+        map_lst = [m for m in self.maps if m.uri == uri]
+        return map_lst[0] if len(map_lst) == 1 else None
 
 
     @property
-    def layouts(self):
+    def layouts(self) -> list:
         """
         Returns all project items which ar of item type "Layout"
         """
-        return [it for it in self.items if it.item_type == 'Layout']
+        # If the maps have already been loaded once, return them.
+        if self.cache.get('layouts', None) is not None:
+            return self.cache['layouts']
+
+        # Load the layouts
+        self.cache['layouts'] = [
+            Layout(self, it) for it in self.project_items if it['itemType'] == 'Layout'
+        ]
+
+        return self.cache['layouts']
 
 
     def close(self):
