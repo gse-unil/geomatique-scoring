@@ -11,3 +11,4 @@ from .map_frame import MapFrame
 from .map_view import MapView
 from .layer import Layer
 from .layout import Layout
+from .color import RGBA

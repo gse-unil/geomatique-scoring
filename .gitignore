@@ -136,3 +136,6 @@ package-lock.json
 # Private directories for development purposes
 /tmp
 /notes
+
+# Extracted APRX files
+*.aprx_FILES
