@@ -1,0 +1,22 @@
+{
+  "c01": {
+    "title": "Une File Geodatabase avec nom «Data_CH» se trouve dans le rendu",
+    "points": 1.0
+  },
+  "c02": {
+    "title": "La Geodatabase possède plusieurs Feature Datasets",
+    "points": 1.0
+  },
+  "c03": {
+    "title": "Chaque Feature Dataset possède au moins une Feature Class",
+    "points": 1.0
+  },
+  "c04": {
+    "title": "Il y a au moins une couche raster dans la Geodatabase",
+    "points": 1.0
+  },
+  "c05": {
+    "title": "Il y a une Feature Class avec un seul canton suisse dans RESULTS (ou similaire)",
+    "points": 1.0
+  }
+}
